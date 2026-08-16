@@ -1,0 +1,14 @@
+<Solution>
+  <!--
+    Direct Integration Verification — one project per capability (DIV-STD-001).
+
+    Deliberately a separate solution outside telecom-integration-platform, exactly as AllInOne sits
+    outside DahabEndpoints. These projects consume the platform; the platform never references them.
+
+    Somtel.Integration.Ocs.Verification, .Sms.Verification and .EDahab.Verification land here beside the
+    HLR one as those capabilities are built, each with the same shape.
+  -->
+  <Folder Name="/src/">
+    <Project Path="src/Somtel.Integration.Hlr.Verification/Somtel.Integration.Hlr.Verification.csproj" />
+  </Folder>
+</Solution>

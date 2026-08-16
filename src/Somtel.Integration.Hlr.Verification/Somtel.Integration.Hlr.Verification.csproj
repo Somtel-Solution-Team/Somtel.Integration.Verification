@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Direct Integration Verification for the HLR capability (DIV-STD-001).
+
+    This project lives OUTSIDE telecom-integration-platform on purpose. It is a consumer of the platform,
+    exactly as AllInOne is a consumer of DahabEndpoints: it references the real integration project and
+    calls its real public functions against the real provider.
+
+        Verification project -> real integration DLL -> real public function -> real provider
+
+    What must never appear in here: a fake provider, a fake service, a duplicated XML or SOAP builder, a
+    duplicated parser, transport logic, or any copy of integration or business logic. If something is
+    needed to talk to the HSS, it belongs in the integration project and is called from here — never
+    reimplemented here. A verification project that reimplements what it verifies proves nothing.
+
+    It is a console application, not a test framework: it runs when a person runs it, never in CI.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Somtel.Integration.Hlr.Verification</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <!-- The same secret store the platform host uses, so credentials are provisioned once per machine. -->
+    <UserSecretsId>somtel-tip-host</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      The one and only reference: the production integration project. Nothing is copied from it; every
+      operation below is invoked through this.
+    -->
+    <ProjectReference Include="..\..\..\telecom-integration-platform\src\Hlr\Somtel.Integration.Hlr\Somtel.Integration.Hlr.csproj" />
+    <ProjectReference Include="..\..\..\telecom-integration-platform\src\BuildingBlocks\Somtel.Integration.BuildingBlocks\Somtel.Integration.BuildingBlocks.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.11" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The market profiles the platform ships. Credentials never come from here — only from secrets. -->
+    <None Include="..\..\..\telecom-integration-platform\config\**\*"
+          CopyToOutputDirectory="PreserveNewest" LinkBase="config" />
+  </ItemGroup>
+</Project>
