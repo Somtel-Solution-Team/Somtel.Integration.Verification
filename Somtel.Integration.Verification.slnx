@@ -11,4 +11,11 @@
   <Folder Name="/src/">
     <Project Path="src/Somtel.Integration.Hlr.Verification/Somtel.Integration.Hlr.Verification.csproj" />
   </Folder>
+  <!--
+    Tests for the tool's own safety guards only — never for the platform. Verifying the platform means
+    calling it against the real provider, which is what src/ does.
+  -->
+  <Folder Name="/tests/">
+    <Project Path="tests/Somtel.Integration.Hlr.Verification.Tests/Somtel.Integration.Hlr.Verification.Tests.csproj" />
+  </Folder>
 </Solution>

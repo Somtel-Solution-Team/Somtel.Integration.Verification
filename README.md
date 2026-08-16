@@ -21,15 +21,31 @@ Standard: [`DIV-STD-001`](../telecom-integration-platform/docs/standards/DIV-STD
 **The provider is production.** There is no test HLR for any market. Anything you run here happens to a
 real subscriber on the real network.
 
-Three rules follow from that, and they are enforced by the tool, not just by this document:
+Four rules follow from that, and they are enforced by the tool, not just by this document:
 
 1. **Read groups change nothing** and are safe at any time.
 2. **Everything else needs `--allow-mutation`.** Without it the run refuses to start.
 3. **You always type the subscriber.** There is no option to find one — not disabled, *absent*. An
    automated picker could choose a real customer, so a human names every identifier that gets touched.
+4. **A run never deletes a subscriber it did not create.** Registration refuses a number that already
+   exists — a number in use is not disposable — and every group that could delete stops there.
 
 Every state-changing check follows **apply → read back → restore**, and the restore runs even when the
 read-back disagrees. A restore that fails is reported as a failure, never hidden.
+
+Rules 1–3 are covered by `tests/Somtel.Integration.Hlr.Verification.Tests`:
+
+```bash
+dotnet test Somtel.Integration.Verification.slnx
+```
+
+Rule 4 is not, and it is worth saying why rather than implying more coverage than exists. Proving it needs
+a provider that reports "this subscriber already exists", and nothing here is allowed to pretend to be one
+(DIV-STD-001). It is enforced at both call sites and reviewed by reading them.
+
+That gap was not theoretical: the `all` group called registration and **discarded its result**, so a number
+already belonging to a real customer would have been driven through every mutating group and then deleted.
+Fixed 2026-08-16.
 
 ---
 
@@ -233,9 +249,13 @@ These fail every run and the cause is understood. Do not chase them.
 
 ## 7. Troubleshooting
 
-**`MARKET_OPERATION_NOT_VERIFIED`** — the market has no endpoint or credentials configured, or the
+**`MARKET_NOT_CONFIGURED`** — the market has no endpoint or credentials configured, or the
 operation has no configured values for it. For SL/PL this is expected today: their credentials are still
-pending.
+pending. Supplying the configuration fixes it.
+
+**`OPERATION_NOT_SUPPORTED`** — different thing entirely: that operation cannot work on that market at all,
+so no configuration will help. Today this is only *reading* lock state on SL/PL, whose operator-determined
+barring has no known read-back command (U-9). Setting lock state there works.
 
 **`AUTHENTICATION_FAILURE`** — the operator credentials are wrong or missing. Re-check §2.2.
 

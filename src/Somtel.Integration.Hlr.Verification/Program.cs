@@ -92,7 +92,17 @@ try
             break;
         case "all":
             // Ordered so the subscriber exists before anything is done to it, and is cleaned up last.
-            await SubscriberLifecycleOperations.RegisterAsync(run, CancellationToken.None);
+            //
+            // The result of the registration decides whether the rest may run at all. RegisterAsync
+            // refuses a number that is already in use — it is not disposable — and returns false. Ignoring
+            // that would drive every mutating group at someone's real subscriber and then delete it, which
+            // is the exact accident the "never delete what you did not create" rule exists to prevent.
+            if (!await SubscriberLifecycleOperations.RegisterAsync(run, CancellationToken.None))
+            {
+                run.Skip("all", "stopped — this run did not create the subscriber, so it will not touch or delete it");
+                break;
+            }
+
             await ReadSubscriberOperations.RunAsync(run, CancellationToken.None);
             await BarringOperations.RunAsync(run, CancellationToken.None);
             await ServiceActivationOperations.RunAsync(run, CancellationToken.None);

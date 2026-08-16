@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Tests for the verification tool's own safety guards.
+
+    Note carefully what this does and does not test. It does NOT test the integration platform — that is
+    what running the tool against the real provider is for, and nothing here pretends to be an HLR
+    (DIV-STD-001). It tests the guards that stand between a person's command line and a production
+    subscriber: the rules about what may be targeted and what may be changed.
+
+    Those rules were structural until now — enforced by the shape of the code and by comments explaining
+    why. That was never enough for the one class of bug that actually matters here, which is a run
+    deleting a subscriber it did not create.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Somtel.Integration.Hlr.Verification\Somtel.Integration.Hlr.Verification.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.0" />
+  </ItemGroup>
+</Project>
