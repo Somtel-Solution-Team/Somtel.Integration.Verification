@@ -127,6 +127,10 @@ static IConfiguration BuildConfiguration()
     var configRoot = Path.Combine(AppContext.BaseDirectory, "config");
     var builder = new ConfigurationBuilder();
 
+    // Platform-wide policy — the same file the host loads, so market routing cannot drift between what
+    // production resolves and what this verifies.
+    builder.AddJsonFile(Path.Combine(configRoot, "platform.json"), optional: true);
+
     foreach (var market in Enum.GetValues<Market>())
     {
         builder.AddJsonFile(

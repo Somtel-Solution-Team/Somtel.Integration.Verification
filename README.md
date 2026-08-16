@@ -74,8 +74,18 @@ Clear them when you are done:
 Remove-Item Env:Hlr__Markets__SS__Credentials__Username, Env:Hlr__Markets__SS__Credentials__Password
 ```
 
-Market endpoints and profiles come from the platform's own `config/markets/*/hlr.json`, copied next to
-the binary at build time. You do not configure anything here.
+Everything that is not a credential comes from the platform's own configuration, copied next to the binary
+at build time — you configure nothing here:
+
+| File | Carries |
+| --- | --- |
+| `config/platform.json` | Market routing: which prefix belongs to which market |
+| `config/markets/{ss,sl,pl}/hlr.json` | That market's endpoint, timeouts, mechanisms, provisioning values |
+
+Loading the *same* files the host loads is the point. Routing used to live in the host's
+`appsettings.json`, which this project never reads — so it silently fell back to compiled defaults and
+could have verified different routing than production uses. It is one file now, and the platform's tests
+pin the compiled defaults to it.
 
 ### 2.3 Build
 
