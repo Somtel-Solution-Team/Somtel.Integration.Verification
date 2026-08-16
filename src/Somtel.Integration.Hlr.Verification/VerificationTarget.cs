@@ -12,12 +12,14 @@ namespace Somtel.Integration.Hlr.Verification;
 /// </summary>
 public sealed record VerificationTarget
 {
-    private VerificationTarget(string market, string msisdn, string? imsi, string? secondaryImsi, bool allowMutation, bool keepSubscriber)
+    private VerificationTarget(
+        string market, string msisdn, string? imsi, string? secondaryImsi, string? forwardTo, bool allowMutation, bool keepSubscriber)
     {
         Market = market;
         Msisdn = msisdn;
         Imsi = imsi;
         SecondaryImsi = secondaryImsi;
+        ForwardTo = forwardTo;
         AllowMutation = allowMutation;
         KeepSubscriber = keepSubscriber;
     }
@@ -33,6 +35,13 @@ public sealed record VerificationTarget
     /// <summary>A second spare SIM, needed by SIM-swap and multi-IMSI.</summary>
     public string? SecondaryImsi { get; }
 
+    /// <summary>
+    /// Where call forwarding should point. Always human-supplied, for the same reason the platform makes
+    /// it a caller parameter: a hardcoded destination sends real calls somewhere. It cannot default to
+    /// the subscriber's own number either — the provider refuses self-forwarding (3033).
+    /// </summary>
+    public string? ForwardTo { get; }
+
     /// <summary>State-changing calls are refused without this. Read-only verification never needs it.</summary>
     public bool AllowMutation { get; }
 
@@ -40,7 +49,7 @@ public sealed record VerificationTarget
     public bool KeepSubscriber { get; }
 
     public static VerificationTarget Create(
-        string? market, string? msisdn, string? imsi, string? secondaryImsi, bool allowMutation, bool keepSubscriber)
+        string? market, string? msisdn, string? imsi, string? secondaryImsi, string? forwardTo, bool allowMutation, bool keepSubscriber)
     {
         if (string.IsNullOrWhiteSpace(market))
         {
@@ -56,7 +65,7 @@ public sealed record VerificationTarget
                 "supplied by a person, so that a human is accountable for every identifier touched.");
         }
 
-        return new VerificationTarget(market, msisdn, imsi, secondaryImsi, allowMutation, keepSubscriber);
+        return new VerificationTarget(market, msisdn, imsi, secondaryImsi, forwardTo, allowMutation, keepSubscriber);
     }
 
     /// <summary>Refuses a state-changing group unless the operator explicitly accepted the consequence.</summary>
@@ -76,6 +85,12 @@ public sealed record VerificationTarget
             CanonicalErrorCode.ValidationError,
             "--imsi is required for this group: a spare SIM that already exists in the AuC. Note this is the " +
             "15-digit IMSI, not the 19-20 digit ICCID printed on the SIM.");
+
+    public string RequireForwardTo() =>
+        ForwardTo ?? throw new IntegrationException(
+            CanonicalErrorCode.ValidationError,
+            "--forward-to is required for this group: a real number to forward calls to. It must not be the " +
+            "subscriber's own number — the provider refuses self-forwarding.");
 
     public string RequireSecondaryImsi() =>
         SecondaryImsi ?? throw new IntegrationException(

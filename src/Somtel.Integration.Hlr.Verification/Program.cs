@@ -39,7 +39,7 @@ Console.WriteLine();
 try
 {
     var target = VerificationTarget.Create(
-        parsed.Market, parsed.Msisdn, parsed.Imsi, parsed.SecondaryImsi, parsed.AllowMutation, parsed.Keep);
+        parsed.Market, parsed.Msisdn, parsed.Imsi, parsed.SecondaryImsi, parsed.ForwardTo, parsed.AllowMutation, parsed.Keep);
 
     // Composed with the platform's own DI extension, so this runs against the service wired exactly as
     // the host wires it. Duplicating the wiring would be duplicating production.
@@ -149,6 +149,7 @@ internal sealed record CommandLine(
     string? Msisdn,
     string? Imsi,
     string? SecondaryImsi,
+    string? ForwardTo,
     bool AllowMutation,
     bool Keep)
 {
@@ -161,7 +162,7 @@ internal sealed record CommandLine(
             return null;
         }
 
-        string? market = null, msisdn = null, imsi = null, secondaryImsi = null;
+        string? market = null, msisdn = null, imsi = null, secondaryImsi = null, forwardTo = null;
         var allowMutation = false;
         var keep = false;
 
@@ -173,13 +174,14 @@ internal sealed record CommandLine(
                 case "--msisdn" when i + 1 < args.Length: msisdn = args[++i]; break;
                 case "--imsi" when i + 1 < args.Length: imsi = args[++i]; break;
                 case "--secondary-imsi" when i + 1 < args.Length: secondaryImsi = args[++i]; break;
+                case "--forward-to" when i + 1 < args.Length: forwardTo = args[++i]; break;
                 case "--allow-mutation": allowMutation = true; break;
                 case "--keep": keep = true; break;
                 default: return null;
             }
         }
 
-        return new CommandLine(args[0].ToLowerInvariant(), market, msisdn, imsi, secondaryImsi, allowMutation, keep);
+        return new CommandLine(args[0].ToLowerInvariant(), market, msisdn, imsi, secondaryImsi, forwardTo, allowMutation, keep);
     }
 
     public static void PrintUsage()
@@ -200,6 +202,7 @@ internal sealed record CommandLine(
         Console.WriteLine("Options:");
         Console.WriteLine("  --imsi <imsi>            a spare SIM (15 digits — not the 19-20 digit ICCID on the card)");
         Console.WriteLine("  --secondary-imsi <imsi>  a second spare SIM, for SIM swap and multi-IMSI");
+        Console.WriteLine("  --forward-to <number>    where call forwarding points; must not be the subscriber's own");
         Console.WriteLine("  --allow-mutation         required by every group except 'read'");
         Console.WriteLine("  --keep                   leave a created subscriber in place instead of deleting it");
         Console.WriteLine();

@@ -77,8 +77,11 @@ public static class ServiceActivationOperations
 
     /// <summary>
     /// Registers and erases a forwarding destination for each condition, with CFU provisioned around it.
-    /// The destination is the subscriber's own number: a real value, and one that cannot reach anybody
-    /// else if the erase were to fail.
+    ///
+    /// The destination comes from the operator, for the same reason the platform makes it a caller
+    /// parameter: a hardcoded one sends real calls somewhere. It cannot quietly default to the
+    /// subscriber's own number either — the provider refuses self-forwarding with 3033, which cost a
+    /// verification run to discover.
     /// </summary>
     public static async Task CallForwardingAsync(VerificationRun run, CancellationToken ct)
     {
@@ -97,7 +100,7 @@ public static class ServiceActivationOperations
                     $"registerCallForwarding[{condition}]",
                     () => run.Hlr.RegisterCallForwardingAsync(
                         new RegisterCallForwardingCommand(
-                            run.Target.Msisdn, run.Target.Market, run.Target.Msisdn, null, condition), ct),
+                            run.Target.Msisdn, run.Target.Market, run.Target.RequireForwardTo(), null, condition), ct),
                     result => $"registered condition={result.Condition}");
 
                 await run.CallAsync(
