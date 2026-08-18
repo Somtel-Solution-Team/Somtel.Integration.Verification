@@ -33,19 +33,25 @@ Four rules follow from that, and they are enforced by the tool, not just by this
 Every state-changing check follows **apply → read back → restore**, and the restore runs even when the
 read-back disagrees. A restore that fails is reported as a failure, never hidden.
 
-Rules 1–3 are covered by `tests/Somtel.Integration.Hlr.Verification.Tests`:
+All four rules are covered by `tests/Somtel.Integration.Hlr.Verification.Tests`:
 
 ```bash
 dotnet test Somtel.Integration.Verification.slnx
 ```
 
-Rule 4 is not, and it is worth saying why rather than implying more coverage than exists. Proving it needs
-a provider that reports "this subscriber already exists", and nothing here is allowed to pretend to be one
-(DIV-STD-001). It is enforced at both call sites and reviewed by reading them.
+Rule 4 used to be the exception, on the grounds that proving it needed a provider reporting "this
+subscriber already exists" — which nothing here may pretend to be (DIV-STD-001). That was true of the old
+design rather than of the rule, so **the design moved instead of the test**.
 
-That gap was not theoretical: the `all` group called registration and **discarded its result**, so a number
+It used to be control flow: every group checked the registration result and skipped removal when it was
+false. That held until one group did not — the `all` group discarded the result entirely, so a number
 already belonging to a real customer would have been driven through every mutating group and then deleted.
-Fixed 2026-08-16.
+Every individual guard was present; one call site ignoring them undid all of them.
+
+Now the run itself records whether it created the subscriber, and deletion asks the run. A caller that
+forgets to check still cannot delete, because the refusal happens before any provider call — which also
+makes it ordinary state to assert, with no fake and no network. A guard each caller must remember is a
+guard that will eventually be forgotten.
 
 ---
 

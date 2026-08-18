@@ -82,6 +82,13 @@ public static class SubscriberLifecycleOperations
                 ? "the subscriber is there"
                 : "THE SUBSCRIBER IS NOT THERE — creation reported success but the record is missing");
 
+        if (after.RecordFound)
+        {
+            // Only now, and only because a read proved it. "The provider accepted the request" is not
+            // enough to earn the right to delete afterwards.
+            run.RecordSubscriberCreated();
+        }
+
         return after.RecordFound;
     }
 
@@ -107,6 +114,10 @@ public static class SubscriberLifecycleOperations
     /// <summary>Deletes the subscriber and confirms it is gone. The authentication key is preserved.</summary>
     public static async Task RemoveAsync(VerificationRun run, CancellationToken ct)
     {
+        // Asked here, once, rather than trusted to every caller. See VerificationRun.RequireCreatedByThisRun
+        // for why: this used to be control flow in each group, and the `all` group forgot it.
+        run.RequireCreatedByThisRun();
+
         await run.CallAsync(
             "removeSubscriber",
             () => run.Hlr.RemoveSubscriberAsync(new RemoveSubscriberCommand(run.Target.Msisdn, run.Target.Market), ct),

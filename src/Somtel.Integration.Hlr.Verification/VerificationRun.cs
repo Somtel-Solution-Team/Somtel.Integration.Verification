@@ -27,6 +27,47 @@ public sealed class VerificationRun
     public bool AnyFailed => _steps.Exists(step => step.Outcome == Outcome.Failed);
 
     /// <summary>
+    /// Whether this run created the subscriber it is acting on. Set once, by registration, and only when
+    /// a read-back proved the subscriber is really there.
+    /// </summary>
+    public bool CreatedTheSubscriber { get; private set; }
+
+    /// <summary>
+    /// Records that this run created the subscriber. Called by registration after it has confirmed the
+    /// record exists — not merely that the provider accepted the request.
+    /// </summary>
+    public void RecordSubscriberCreated() => CreatedTheSubscriber = true;
+
+    /// <summary>
+    /// The one rule that matters most in this tool: <b>a run may only delete a subscriber it created
+    /// itself</b>. There is no test HLR, so the alternative to this check is deleting a real customer.
+    ///
+    /// <para>
+    /// It lives here, on the run, rather than in each group that might delete. It used to be control flow
+    /// — every caller checked the registration result and skipped removal if it was false — and that held
+    /// until one caller did not. The <c>all</c> group discarded the result entirely, so an <c>all</c> run
+    /// against a number already in use would have driven every mutating group at someone's live
+    /// subscriber and then deleted it. Every individual guard was present; one call site ignoring them
+    /// undid all of them.
+    /// </para>
+    ///
+    /// <para>
+    /// As state on the run it cannot be forgotten: a caller that skips the check still cannot delete,
+    /// because deletion asks the run first and the run knows what it did.
+    /// </para>
+    /// </summary>
+    public void RequireCreatedByThisRun()
+    {
+        if (!CreatedTheSubscriber)
+        {
+            throw new IntegrationException(
+                CanonicalErrorCode.ValidationError,
+                "This run did not create the subscriber, so it will not delete it. A number already in " +
+                "use belongs to somebody; only a subscriber this run provisioned may be removed by it.");
+        }
+    }
+
+    /// <summary>
     /// Calls one real integration function and reports what came back. <paramref name="describe"/> turns
     /// the real result record into the line an operator reads — so what is displayed is the actual
     /// response, not a restatement of the request.
